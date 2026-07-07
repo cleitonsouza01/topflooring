@@ -39,7 +39,7 @@ export const socialLinks = {
 
 /** Origin used for canonical URLs, OG, sitemap, robots. Overridable at deploy time. */
 export const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://topflooringorlando.com'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.topflooringorlando.com'
 ).replace(/\/$/, '');
 
 export const seoDefaults = {
