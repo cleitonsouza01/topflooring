@@ -239,7 +239,7 @@ textarea:focus-visible {
      background-position only (no layout/CLS); disabled under reduced-motion. */
   .hex-field,
   .hex-field-navy {
-    animation: hexDrift 60s linear infinite;
+    animation: hexDrift 50s linear infinite;
   }
   @keyframes hexDrift {
     to {
