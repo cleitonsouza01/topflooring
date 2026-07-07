@@ -1,0 +1,7 @@
+name = "topflooring"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "out"
+
+# Secrets (NOTIFYGW_API_KEY, NOTIFYGW_INSTANCE, LEAD_TO_EMAIL) are configured in the
+# Cloudflare Pages dashboard (Settings → Environment variables), not committed here.
+# For local `wrangler pages dev`, put them in a .dev.vars file (gitignored).

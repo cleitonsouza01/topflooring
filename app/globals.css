@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Eyebrow / numeric label treatment */
+.eyebrow {
+  font-family: var(--font-space-grotesk), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+/* ---- Hexagon tessellation motif (repeating SVG, tiles seamlessly) ---- */
+.hex-field {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cg fill='none' stroke='%23D98A2B' stroke-width='1.4' stroke-opacity='0.5'%3E%3Cpath d='M28 0l24 14v28L28 56 4 42V14z'/%3E%3Cpath d='M28 48l24 14v28L28 104 4 90V62z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 96px;
+}
+.hex-field-navy {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cg fill='none' stroke='%231B3A5B' stroke-width='1.4' stroke-opacity='0.14'%3E%3Cpath d='M28 0l24 14v28L28 56 4 42V14z'/%3E%3Cpath d='M28 48l24 14v28L28 104 4 90V62z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 96px;
+}
+
+/* Solid hexagon chip (clip-path) */
+.hexchip {
+  -webkit-clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+/* Gallery hover: hex mask reveal for the label overlay */
+.gtile img {
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.gtile:hover img,
+.gtile:focus-within img {
+  transform: scale(1.08);
+}
+.gtile .cap {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  opacity: 0;
+  transform: translateY(8px);
+}
+.gtile:hover .cap,
+.gtile:focus-within .cap {
+  opacity: 1;
+  transform: translateY(0);
+}
+.gtile .hexbadge {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.35s ease;
+}
+.gtile:hover .hexbadge,
+.gtile:focus-within .hexbadge {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+
+.cta-underline {
+  position: relative;
+}
+.cta-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 2px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.3s ease;
+}
+.cta-underline:hover::after,
+.cta-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Visible focus rings */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #d98a2b;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============ MOTION SYSTEM (animate transform/opacity only — no CLS) ============ */
+.logo-link {
+  transition: transform 0.3s ease;
+  transform-origin: left center;
+}
+.logo-link:hover {
+  transform: scale(1.03);
+}
+
+.svc-card,
+.step-card {
+  transition: opacity 0.6s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.svc-card:hover,
+.step-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px -20px rgba(19, 44, 70, 0.55);
+}
+.step-card > .hexchip,
+.why-cell > .hexchip {
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.step-card:hover > .hexchip,
+.why-cell:hover > .hexchip {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+/* Ochre CTA shimmer sheen + subtle lift */
+.shine {
+  background-image: linear-gradient(
+    100deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.38) 50%,
+    transparent 68%
+  );
+  background-size: 220% 100%;
+  background-position: 190% 0;
+  background-repeat: no-repeat;
+  transition: transform 0.2s ease, background-color 0.15s ease, background-position 0s;
+}
+.shine:hover,
+.shine:focus-visible {
+  transform: scale(1.02);
+  background-position: -70% 0;
+  transition: transform 0.2s ease, background-color 0.15s ease, background-position 0.75s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Reveal-on-scroll — hidden ONLY when JS marks the root .anim-ready. */
+  html.anim-ready [data-reveal] > * {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  html.anim-ready [data-reveal].in > * {
+    opacity: 1;
+    transform: none;
+  }
+  html.anim-ready [data-reveal].in > *:nth-child(1) { transition-delay: 0ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(2) { transition-delay: 60ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(3) { transition-delay: 120ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(4) { transition-delay: 180ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(5) { transition-delay: 240ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(6) { transition-delay: 300ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(7) { transition-delay: 360ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(8) { transition-delay: 420ms; }
+  html.anim-ready [data-reveal].in > *:nth-child(n + 9) { transition-delay: 480ms; }
+
+  /* Eyebrow: thin accent line grows on reveal (space reserved → no reflow) */
+  html.anim-ready [data-reveal] .eyebrow::after {
+    content: '';
+    display: inline-block;
+    vertical-align: middle;
+    width: 2rem;
+    height: 2px;
+    margin-left: 0.55rem;
+    background: currentColor;
+    opacity: 0.7;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s;
+  }
+  html.anim-ready [data-reveal].in .eyebrow::after {
+    transform: scaleX(1);
+  }
+
+  /* Hero photo gentle float (~1.5%, clipped by wrapper — no overflow/CLS) */
+  html.anim-ready .hero-img {
+    will-change: transform;
+    animation: heroFloat 10s ease-in-out infinite;
+  }
+  @keyframes heroFloat {
+    0%, 100% { transform: scale(1.06) translateY(0); }
+    50% { transform: scale(1.06) translateY(-1.5%); }
+  }
+
+  /* Hero hex seam chip */
+  html.anim-ready .hero-chip {
+    opacity: 0;
+    animation: chipFade 0.7s ease 0.5s forwards;
+  }
+  @keyframes chipFade {
+    to { opacity: 1; }
+  }
+  html.anim-ready .hero-chip-inner {
+    animation: chipInner 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) 0.55s both;
+  }
+  @keyframes chipInner {
+    from { transform: rotate(-25deg) scale(0.6); }
+    to { transform: rotate(0) scale(1); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+  [data-reveal] > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .hero-chip {
+    opacity: 1 !important;
+  }
+}
