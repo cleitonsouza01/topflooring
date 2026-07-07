@@ -1,5 +1,9 @@
-/** Top Flooring wordmark glyph. `fill` controls the primary (navy/bone) mark color. */
-export function LogoMark({ fill = '#1B3A5B', className }: { fill?: string; className?: string }) {
+/**
+ * Top Flooring monogram — original brand colors: navy "T" + red "F".
+ * `fill` overrides only the neutral "T" (e.g. bone on dark backgrounds);
+ * the "F" stays the brand red always. Colors match public/logo-tf.svg.
+ */
+export function LogoMark({ fill = '#0A2A54', className }: { fill?: string; className?: string }) {
   return (
     <svg viewBox="0 0 964 742" role="img" aria-label="Top Flooring Orlando" className={className}>
       <path
@@ -8,7 +12,7 @@ export function LogoMark({ fill = '#1B3A5B', className }: { fill?: string; class
         d="M242.8,175.1 243.0,531.9 408.5,696.0 416.3,701.7 417.7,696.0 417.7,140.1 418.6,137.9 420.7,136.9 600.3,136.8 603.6,131.3 609.5,116.0 650.0,6.6 646.3,5.1 6.6,5.2 5.4,6.6 5.1,13.1 5.1,131.3 6.6,137.4 96.4,137.9 113.9,136.9 120.5,137.9 164.3,137.9 175.3,136.9 179.7,137.9 225.7,137.9 238.8,137.1 241.3,137.9 242.8,140.1Z"
       />
       <path
-        fill="#D98A2B"
+        fill="#B5131F"
         fillRule="evenodd"
         d="M605.0,190.4 605.0,264.8 605.2,267.0 606.9,268.6 867.6,268.8 869.6,269.2 870.0,271.4 822.4,396.2 819.4,399.7 606.9,399.7 604.7,400.8 603.8,402.7 603.8,527.5 605.0,534.1 605.0,599.7 603.4,606.3 497.3,697.0 490.8,701.3 483.0,709.2 453.5,734.2 451.5,733.2 452.1,726.7 450.7,720.1 450.9,707.0 452.1,702.6 450.7,693.8 450.7,172.9 452.4,170.7 455.7,169.8 602.5,169.8 605.0,172.9Z M887.3,137.9 904.8,136.9 907.0,135.5 954.0,15.3 956.2,6.6 953.0,5.1 683.6,5.5 680.7,8.8 676.4,19.7 633.3,135.7 637.6,137.9 865.4,137.9 872.0,136.9Z"
       />
