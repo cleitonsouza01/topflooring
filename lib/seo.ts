@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { business, siteUrl, seoDefaults } from './business';
+import { business, siteUrl, seoDefaults, socialLinks, serviceAreaCities } from './business';
 
 /** Base metadata applied at the root layout; pages can override per-route. */
 export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
@@ -62,6 +62,7 @@ export function localBusinessJsonLd() {
     name: business.name,
     legalName: business.legalName,
     image: `${siteUrl}${seoDefaults.ogImage}`,
+    logo: `${siteUrl}${seoDefaults.logo}`,
     url: siteUrl,
     telephone: '+16892557378',
     email: business.email,
@@ -74,7 +75,19 @@ export function localBusinessJsonLd() {
       postalCode: business.address.postalCode,
       addressCountry: business.address.country,
     },
-    areaServed: business.areaServed,
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: business.geo.latitude,
+      longitude: business.geo.longitude,
+    },
+    hasMap: socialLinks.googleMaps,
+    sameAs: [
+      socialLinks.googleBusiness,
+      socialLinks.facebook,
+      socialLinks.instagram,
+      socialLinks.youtube,
+    ],
+    areaServed: serviceAreaCities.map((city) => ({ '@type': 'City', name: city })),
     openingHoursSpecification: {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],

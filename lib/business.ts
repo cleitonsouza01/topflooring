@@ -24,18 +24,30 @@ export const business = {
   openingHours: 'Mo-Su 06:30-21:00',
   areaServed: 'Greater Orlando, FL',
   priceRange: '$$',
+  // Google Business Profile marker coordinates for Top Flooring Orlando.
+  geo: { latitude: 28.5670655, longitude: -81.3897125 },
+} as const;
+
+/** Official profiles — used for schema `sameAs`/`hasMap` and (optionally) footer links. */
+export const socialLinks = {
+  facebook: 'https://www.facebook.com/TopFlooringOrlando',
+  instagram: 'https://www.instagram.com/TopFlooringOrlando',
+  youtube: 'https://www.youtube.com/@TopFlooringOrlando',
+  googleBusiness: 'https://maps.app.goo.gl/MGcUaawF8wk16JdD6',
+  googleMaps: 'https://maps.app.goo.gl/7hvU4zSDnYaWZGCn7',
 } as const;
 
 /** Origin used for canonical URLs, OG, sitemap, robots. Overridable at deploy time. */
 export const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.topflooringservices.com'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://topflooringorlando.com'
 ).replace(/\/$/, '');
 
 export const seoDefaults = {
   title: 'Top Flooring Orlando | Flooring Installation in Orlando, FL',
   description:
-    "Orlando's full-service flooring experts — hardwood, tile, luxury vinyl, stone and epoxy. Free in-home estimates, shop-at-home samples, flexible financing. Call (689) 255-7378.",
+    "Orlando's flooring experts — hardwood, tile, luxury vinyl, stone & epoxy. Free in-home estimates and shop-at-home samples. Call (689) 255-7378.",
   ogImage: '/og-image.jpg',
+  logo: '/web-app-manifest-512x512.png',
 } as const;
 
 export const navLinks = [

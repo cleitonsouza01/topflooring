@@ -38,4 +38,13 @@ describe('localBusinessJsonLd', () => {
     expect(hours.opens).toBe('06:30');
     expect(hours.closes).toBe('21:00');
   });
+
+  it('includes local signals: geo, sameAs profiles, and a city-list areaServed', () => {
+    const geo = data.geo as { latitude: number; longitude: number };
+    expect(geo.latitude).toBeCloseTo(28.567, 2);
+    expect(Array.isArray(data.sameAs)).toBe(true);
+    expect((data.sameAs as string[]).some((u) => u.includes('facebook.com'))).toBe(true);
+    expect(Array.isArray(data.areaServed)).toBe(true);
+    expect((data.areaServed as { name: string }[])[0].name).toBe('Orlando');
+  });
 });
