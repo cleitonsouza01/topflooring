@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { galleryItems } from '@/lib/business';
+import { ExpandIcon } from './icons';
 
 export function Gallery() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -113,6 +114,12 @@ export function Gallery() {
                 aria-hidden="true"
               >
                 <span className="hexchip bg-navy w-3.5 h-3.5" />
+              </span>
+              <span
+                className="gtile-expand absolute top-3 right-3 bg-navy/80 text-bone w-8 h-8 rounded-full grid place-items-center"
+                aria-hidden="true"
+              >
+                <ExpandIcon className="w-4 h-4" />
               </span>
               <span className="cap absolute inset-x-0 bottom-0 p-3 pt-8 bg-gradient-to-t from-navy/90 to-transparent text-bone text-left text-sm font-semibold">
                 {item.caption}

@@ -1,6 +1,7 @@
-import { business, navLinks } from '@/lib/business';
+import { business } from '@/lib/business';
 import { LogoMark } from './Logo';
 import { PhoneIcon } from './icons';
+import { PrimaryNav } from './PrimaryNav';
 
 export function Header() {
   return (
@@ -23,13 +24,7 @@ export function Header() {
             </span>
           </a>
 
-          <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-navy/80" aria-label="Primary">
-            {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="cta-underline hover:text-navy">
-                {link.label}
-              </a>
-            ))}
-          </nav>
+          <PrimaryNav />
 
           <div className="flex items-center gap-2 sm:gap-3">
             <a

@@ -61,6 +61,26 @@ body {
   transform: rotate(0deg) scale(1);
   opacity: 1;
 }
+.gtile .gtile-expand {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.gtile:hover .gtile-expand,
+.gtile:focus-within .gtile-expand {
+  opacity: 1;
+}
+
+/* Touch devices can't hover — keep the caption and enlarge cue visible so it's
+   clear each tile is a tappable, labelled project. */
+@media (hover: none) {
+  .gtile .cap {
+    opacity: 1;
+    transform: none;
+  }
+  .gtile .gtile-expand {
+    opacity: 1;
+  }
+}
 
 .cta-underline {
   position: relative;
@@ -80,6 +100,15 @@ body {
 .cta-underline:hover::after,
 .cta-underline:focus-visible::after {
   transform: scaleX(1);
+}
+
+/* Active nav link (scroll-spy): persistent ochre underline + full-strength navy text */
+.nav-link[aria-current='location'] {
+  color: #1b3a5b;
+}
+.nav-link[aria-current='location']::after {
+  transform: scaleX(1);
+  background: #d98a2b;
 }
 
 /* Visible focus rings */

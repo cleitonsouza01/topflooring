@@ -11,7 +11,8 @@ const exploreLinks = [
 export function Footer() {
   return (
     <footer className="bg-ink text-bone">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
+      {/* Extra bottom padding on mobile so the fixed Call/Estimate bar never covers footer content. */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-14">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">

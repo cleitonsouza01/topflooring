@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { business, serviceOptions } from '@/lib/business';
 import { CheckIcon } from './icons';
 
@@ -29,6 +29,13 @@ const errorInputClass = 'border-red-600 ring-1 ring-red-600';
 export function EstimateForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const successRef = useRef<HTMLDivElement>(null);
+
+  // Move keyboard focus to the confirmation once it renders — otherwise focus is
+  // lost (the submit button it was on has been removed from the DOM).
+  useEffect(() => {
+    if (status === 'success') successRef.current?.focus();
+  }, [status]);
 
   function setFieldError(name: FieldName, value: string) {
     const msg = validateField(name, value);
@@ -86,7 +93,7 @@ export function EstimateForm() {
   if (status === 'success') {
     return (
       <div className="bg-bone text-ink rounded-2xl p-6 sm:p-8 shadow-tile">
-        <div role="status" aria-live="polite" className="text-center py-8">
+        <div ref={successRef} tabIndex={-1} role="status" aria-live="polite" className="text-center py-8 outline-none">
           <span className="hexchip bg-ochre w-16 h-16 grid place-items-center mx-auto mb-4" aria-hidden="true">
             <CheckIcon className="w-8 h-8 text-navy" />
           </span>
