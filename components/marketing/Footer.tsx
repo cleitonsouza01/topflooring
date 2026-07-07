@@ -17,7 +17,7 @@ export function Footer() {
             <div className="flex items-center gap-2.5 mb-4">
               <LogoMark fill="#F0EBE0" className="h-[30px] sm:h-[38px] w-auto shrink-0" />
               <span className="font-display font-bold text-base tracking-tight">
-                TOP FLOORING SERVICES
+                TOP FLOORING ORLANDO
               </span>
             </div>
             <p className="text-bone/65 text-sm leading-relaxed">{business.tagline}</p>
@@ -74,7 +74,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-bone/15 flex flex-col sm:flex-row gap-2 justify-between text-xs text-bone/50">
-          <p>&copy; 2026 Top Flooring Services LLC. All rights reserved.</p>
+          <p>&copy; 2026 Top Flooring Orlando. All rights reserved.</p>
           <p>Locally owned in Orlando, FL · Licensed &amp; insured</p>
         </div>
       </div>

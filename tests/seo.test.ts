@@ -21,6 +21,11 @@ describe('buildMetadata', () => {
 describe('localBusinessJsonLd', () => {
   const data = localBusinessJsonLd();
 
+  it('uses the brand name with the legal entity name', () => {
+    expect(data.name).toBe('Top Flooring Orlando');
+    expect(data.legalName).toBe('Top Flooring Services LLC');
+  });
+
   it('is a HomeAndConstructionBusiness with NAP', () => {
     expect(data['@type']).toBe('HomeAndConstructionBusiness');
     expect(data.telephone).toBe('+16892557378');

@@ -1,12 +1,13 @@
 /**
- * Single source of truth for Top Flooring Services business facts and page content.
+ * Single source of truth for Top Flooring Orlando business facts and page content.
  * Components and SEO/JSON-LD builders read from here — do not duplicate these values.
  * Source: docs/Top_Flooring_Services_Marketing_Base.md and landingpage CONTENT.md.
  */
 
 export const business = {
-  name: 'Top Flooring Services LLC',
-  shortName: 'Top Flooring Services',
+  name: 'Top Flooring Orlando',
+  legalName: 'Top Flooring Services LLC',
+  shortName: 'Top Flooring Orlando',
   tagline: "Orlando's trusted flooring experts — every floor type, every space, done right.",
   phoneDisplay: '(689) 255-7378',
   phoneHref: 'tel:+16892557378',
@@ -31,7 +32,7 @@ export const siteUrl = (
 ).replace(/\/$/, '');
 
 export const seoDefaults = {
-  title: 'Top Flooring Services | Flooring Installation in Orlando, FL',
+  title: 'Top Flooring Orlando | Flooring Installation in Orlando, FL',
   description:
     "Orlando's full-service flooring experts — hardwood, tile, luxury vinyl, stone and epoxy. Free in-home estimates, shop-at-home samples, flexible financing. Call (689) 255-7378.",
   ogImage: '/og-image.jpg',

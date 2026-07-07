@@ -10,7 +10,7 @@ export function Header() {
           <a
             href="#top"
             className="logo-link flex items-center gap-2.5 shrink-0 min-h-[44px]"
-            aria-label="Top Flooring Services — home"
+            aria-label="Top Flooring Orlando — home"
           >
             <LogoMark className="h-[30px] sm:h-[38px] w-auto shrink-0" />
             <span className="leading-none">
@@ -18,7 +18,7 @@ export function Header() {
                 TOP FLOORING
               </span>
               <span className="block eyebrow text-clay text-[9px] sm:text-[10px] tracking-[0.28em]">
-                SERVICES · ORLANDO
+                ORLANDO, FL
               </span>
             </span>
           </a>

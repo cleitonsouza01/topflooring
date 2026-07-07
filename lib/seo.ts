@@ -18,7 +18,7 @@ export function buildMetadata(overrides: Partial<Metadata> = {}): Metadata {
       ],
       apple: '/apple-touch-icon.png',
     },
-    appleWebApp: { title: 'TopFlooring' },
+    appleWebApp: { title: 'Top Flooring' },
     openGraph: {
       type: 'website',
       siteName: business.shortName,
@@ -60,6 +60,7 @@ export function localBusinessJsonLd() {
     '@type': 'HomeAndConstructionBusiness',
     '@id': `${siteUrl}/#business`,
     name: business.name,
+    legalName: business.legalName,
     image: `${siteUrl}${seoDefaults.ogImage}`,
     url: siteUrl,
     telephone: '+16892557378',

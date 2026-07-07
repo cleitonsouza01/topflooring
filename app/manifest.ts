@@ -6,7 +6,7 @@ export const dynamic = 'force-static';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: business.name,
-    short_name: 'TopFlooring',
+    short_name: 'Top Flooring',
     description:
       "Orlando's full-service flooring experts — hardwood, tile, luxury vinyl, stone and epoxy.",
     start_url: '/',
