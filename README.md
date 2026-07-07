@@ -43,7 +43,7 @@ To exercise the lead form locally with the Function running, create a `.dev.vars
 | `NEXT_PUBLIC_SITE_URL` | build | Canonical origin for metadata, canonical URLs, OG, sitemap, robots. |
 | `NOTIFYGW_API_KEY` | Pages Function (secret) | notifygw.com API key (`ngw_...`). |
 | `NOTIFYGW_INSTANCE` | Pages Function (optional) | Email instance id; only if more than one is registered. |
-| `LEAD_TO_EMAIL` | Pages Function (secret) | Inbox that receives estimate requests. |
+| `LEAD_TO_EMAIL` | Pages Function (secret) | Inbox(es) that receive estimate requests. One address, or several comma-separated — each gets its own email. |
 
 See `.env.local.example`.
 

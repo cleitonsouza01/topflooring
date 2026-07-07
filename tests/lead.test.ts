@@ -72,6 +72,35 @@ describe('lead Pages Function', () => {
     expect(sent.message).toContain('jane@example.com');
   });
 
+  it('fans out to every recipient in a comma-separated LEAD_TO_EMAIL', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 202 }));
+
+    const res = await onRequest({
+      request: post(validLead),
+      env: { NOTIFYGW_API_KEY: 'ngw_test', LEAD_TO_EMAIL: 'a@example.com, b@example.com ; c@example.com' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    const sentTo = fetchSpy.mock.calls.map(([, init]) => JSON.parse(init?.body as string).to);
+    expect(sentTo).toEqual(['a@example.com', 'b@example.com', 'c@example.com']);
+  });
+
+  it('still succeeds (200) when one of several recipients fails', async () => {
+    let call = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      call += 1;
+      return new Response('', { status: call === 1 ? 500 : 202 });
+    });
+    const res = await onRequest({
+      request: post(validLead),
+      env: { NOTIFYGW_API_KEY: 'ngw_test', LEAD_TO_EMAIL: 'bad@example.com, good@example.com' },
+    });
+    expect(res.status).toBe(200);
+  });
+
   it('returns 502 when the mailer fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('nope', { status: 500 }));
     const res = await onRequest({ request: post(validLead), env });

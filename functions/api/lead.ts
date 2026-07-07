@@ -72,7 +72,14 @@ export const onRequest: (context: {
     return json({ ok: false, errors }, 422);
   }
 
-  if (!env.NOTIFYGW_API_KEY || !env.LEAD_TO_EMAIL) {
+  // LEAD_TO_EMAIL may list multiple recipients, comma- or semicolon-separated.
+  // notifygw's `to` is a single address, so we send one email per recipient.
+  const recipients = (env.LEAD_TO_EMAIL || '')
+    .split(/[,;]/)
+    .map((r) => r.trim())
+    .filter(Boolean);
+
+  if (!env.NOTIFYGW_API_KEY || recipients.length === 0) {
     return json({ ok: false, error: 'Mail service is not configured.' }, 500);
   }
 
@@ -90,30 +97,35 @@ export const onRequest: (context: {
     'Reply directly to this lead at the email above.',
   ].join('\n');
 
-  const body: Record<string, string> = {
-    to: env.LEAD_TO_EMAIL,
-    subject: `New estimate request — ${name} (${service})`,
-    message,
-  };
-  if (env.NOTIFYGW_INSTANCE) body.instance = env.NOTIFYGW_INSTANCE;
+  const subject = `New estimate request — ${name} (${service})`;
 
-  try {
-    const res = await fetch(NOTIFYGW_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.NOTIFYGW_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      // Do not leak provider internals to the client.
-      console.error('notifygw error', res.status, await res.text().catch(() => ''));
-      return json({ ok: false, error: 'Could not send your request. Please try again.' }, 502);
+  async function sendTo(to: string): Promise<boolean> {
+    const body: Record<string, string> = { to, subject, message };
+    if (env.NOTIFYGW_INSTANCE) body.instance = env.NOTIFYGW_INSTANCE;
+    try {
+      const res = await fetch(NOTIFYGW_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.NOTIFYGW_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        // Do not leak provider internals to the client.
+        console.error('notifygw error', to, res.status, await res.text().catch(() => ''));
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('notifygw request failed', to, err);
+      return false;
     }
-  } catch (err) {
-    console.error('notifygw request failed', err);
+  }
+
+  const results = await Promise.all(recipients.map(sendTo));
+  // Succeed if at least one recipient was notified — never drop a lead over a single bad address.
+  if (!results.some(Boolean)) {
     return json({ ok: false, error: 'Could not send your request. Please try again.' }, 502);
   }
 
