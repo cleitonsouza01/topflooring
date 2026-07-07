@@ -9,6 +9,58 @@ type Errors = Partial<Record<FieldName, string>>;
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// ---- Cloudflare Turnstile (bonus anti-spam signal; strictly fail-open) ----
+// The site key is inlined at build time. When it's absent, Turnstile is skipped
+// entirely and the form behaves exactly as before — no widget, no token.
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const TURNSTILE_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+interface TurnstileApi {
+  render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+  reset: (id?: string) => void;
+  remove: (id: string) => void;
+}
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
+
+// Load the Turnstile script at most once across the whole page, even under React
+// StrictMode's double-mount. Resolves when window.turnstile is usable; rejects if the
+// script can't load (blocked / offline) so the caller can fail open.
+let turnstileScriptPromise: Promise<void> | null = null;
+function loadTurnstileScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('no window'));
+  if (window.turnstile) return Promise.resolve();
+  if (turnstileScriptPromise) return turnstileScriptPromise;
+
+  turnstileScriptPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src^="https://challenges.cloudflare.com/turnstile"]',
+    );
+    if (existing) {
+      if (window.turnstile) resolve();
+      else {
+        existing.addEventListener('load', () => resolve());
+        existing.addEventListener('error', () => reject(new Error('turnstile load error')));
+      }
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = TURNSTILE_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      turnstileScriptPromise = null; // allow a later retry
+      reject(new Error('turnstile load error'));
+    };
+    document.head.appendChild(script);
+  });
+  return turnstileScriptPromise;
+}
+
 function validateField(name: FieldName, value: string): string {
   switch (name) {
     case 'name':
@@ -31,11 +83,65 @@ export function EstimateForm() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const successRef = useRef<HTMLDivElement>(null);
 
+  // Anti-spam plumbing. All of this is best-effort: if any of it is missing, the
+  // submission still goes through (the server treats an absent token / timestamp as
+  // "no signal"). Nothing here can block a real lead on the client.
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+  const turnstileToken = useRef<string>('');
+  // Recorded once, on first render, and preserved across StrictMode's remount.
+  const formLoadedAt = useRef<number>(Date.now());
+
   // Move keyboard focus to the confirmation once it renders — otherwise focus is
   // lost (the submit button it was on has been removed from the DOM).
   useEffect(() => {
     if (status === 'success') successRef.current?.focus();
   }, [status]);
+
+  // Render the invisible Turnstile widget once. interaction-only keeps it hidden unless
+  // Cloudflare decides a specific visitor needs a challenge. Guarded so StrictMode's
+  // double-mount (and any re-render) never produces a second widget.
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+    let cancelled = false;
+    loadTurnstileScript()
+      .then(() => {
+        if (cancelled || turnstileWidgetId.current !== null) return;
+        const el = turnstileContainerRef.current;
+        if (!el || !window.turnstile) return;
+        turnstileWidgetId.current = window.turnstile.render(el, {
+          sitekey: TURNSTILE_SITE_KEY,
+          appearance: 'interaction-only',
+          callback: (token: string) => {
+            turnstileToken.current = token;
+          },
+          'error-callback': () => {
+            turnstileToken.current = '';
+          },
+          'expired-callback': () => {
+            turnstileToken.current = '';
+          },
+        });
+      })
+      .catch(() => {
+        // Script blocked or offline — fail open, no token is sent.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // A submitted token is single-use; get a fresh one for any subsequent attempt.
+  function resetTurnstile() {
+    if (turnstileWidgetId.current !== null && window.turnstile) {
+      try {
+        window.turnstile.reset(turnstileWidgetId.current);
+      } catch {
+        // ignore — a reset failure just means the next submit sends no/stale token
+      }
+    }
+    turnstileToken.current = '';
+  }
 
   function setFieldError(name: FieldName, value: string) {
     const msg = validateField(name, value);
@@ -81,11 +187,17 @@ export function EstimateForm() {
           email: data.get('email'),
           service: data.get('service'),
           details: data.get('details'),
+          formLoadedAt: formLoadedAt.current,
+          // Omit the field entirely when we have no token — the server skips
+          // verification in that case rather than treating it as a failure.
+          ...(turnstileToken.current ? { turnstileToken: turnstileToken.current } : {}),
         }),
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       setStatus('success');
     } catch {
+      // The token we just sent is spent; refresh it so a retry can be verified.
+      resetTurnstile();
       setStatus('error');
     }
   }
@@ -229,6 +341,9 @@ export function EstimateForm() {
               placeholder="Rooms, approx. square footage, timeline…"
             />
           </div>
+
+          {/* Invisible Turnstile widget; only takes up space if a challenge appears. */}
+          <div ref={turnstileContainerRef} className="empty:hidden" />
 
           <button
             type="submit"

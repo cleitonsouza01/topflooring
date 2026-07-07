@@ -4,13 +4,41 @@ import { onRequest } from '@/functions/api/lead';
 const env = {
   NOTIFYGW_API_KEY: 'ngw_test',
   LEAD_TO_EMAIL: 'owner@example.com',
+  TURNSTILE_SECRET_KEY: 'ts_secret_test',
 };
 
-function post(body: unknown): Request {
+const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+const NOTIFYGW_URL = 'https://api.notifygw.com/api/v1/email';
+
+function post(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request('https://site.test/api/lead', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
+}
+
+/**
+ * Mock global fetch, routing by URL: siteverify returns a configurable Turnstile
+ * result; the notifygw mailer always succeeds. Returns the spy for assertions.
+ */
+function mockFetch(opts: { siteverify?: { success: boolean } | Error } = {}) {
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = typeof input === 'string' ? input : (input as Request).url;
+    if (url === SITEVERIFY_URL) {
+      if (opts.siteverify instanceof Error) throw opts.siteverify;
+      const success = opts.siteverify?.success ?? true;
+      return new Response(JSON.stringify({ success }), { status: 200 });
+    }
+    // notifygw mailer
+    return new Response(JSON.stringify({ outbox_id: 'x' }), { status: 202 });
+  });
+}
+
+function siteverifyCalls(spy: ReturnType<typeof mockFetch>) {
+  return spy.mock.calls.filter(([input]) => {
+    const url = typeof input === 'string' ? input : (input as Request).url;
+    return url === SITEVERIFY_URL;
   });
 }
 
@@ -110,5 +138,102 @@ describe('lead Pages Function', () => {
   it('returns 500 when mail service env is not configured', async () => {
     const res = await onRequest({ request: post(validLead), env: { NOTIFYGW_API_KEY: '', LEAD_TO_EMAIL: '' } });
     expect(res.status).toBe(500);
+  });
+
+  // ---- Time-trap ----
+
+  it('time-trap: silently drops a submission completed faster than 800ms', async () => {
+    const fetchSpy = mockFetch();
+    const res = await onRequest({
+      request: post({ ...validLead, formLoadedAt: Date.now() - 100 }),
+      env,
+    });
+    expect(res.status).toBe(202);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('time-trap: allows a submission that took longer than 800ms', async () => {
+    mockFetch();
+    const res = await onRequest({
+      request: post({ ...validLead, formLoadedAt: Date.now() - 5000 }),
+      env,
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('time-trap: allows a request with no formLoadedAt (older client)', async () => {
+    mockFetch();
+    const res = await onRequest({ request: post(validLead), env });
+    expect(res.status).toBe(200);
+  });
+
+  it('time-trap: allows a formLoadedAt in the future (clock skew, fail-open)', async () => {
+    mockFetch();
+    const res = await onRequest({
+      request: post({ ...validLead, formLoadedAt: Date.now() + 60_000 }),
+      env,
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('time-trap: ignores a malformed formLoadedAt (string / NaN / negative)', async () => {
+    mockFetch();
+    for (const bad of ['abc', Number.NaN, -1000] as unknown[]) {
+      const res = await onRequest({ request: post({ ...validLead, formLoadedAt: bad }), env });
+      expect(res.status).toBe(200);
+    }
+  });
+
+  // ---- Turnstile ----
+
+  it('turnstile: verifies a present token, passing the secret and remoteip', async () => {
+    const fetchSpy = mockFetch({ siteverify: { success: true } });
+    const res = await onRequest({
+      request: post({ ...validLead, turnstileToken: 'tok_abc' }, { 'CF-Connecting-IP': '203.0.113.7' }),
+      env,
+    });
+    expect(res.status).toBe(200);
+
+    const calls = siteverifyCalls(fetchSpy);
+    expect(calls).toHaveLength(1);
+    const body = new URLSearchParams(calls[0][1]?.body as string);
+    expect(body.get('secret')).toBe('ts_secret_test');
+    expect(body.get('response')).toBe('tok_abc');
+    expect(body.get('remoteip')).toBe('203.0.113.7');
+  });
+
+  it('turnstile: fails open (still delivers) when siteverify returns success:false', async () => {
+    const fetchSpy = mockFetch({ siteverify: { success: false } });
+    const res = await onRequest({ request: post({ ...validLead, turnstileToken: 'tok_bad' }), env });
+    expect(res.status).toBe(200);
+    expect(siteverifyCalls(fetchSpy)).toHaveLength(1); // verification ran
+    // mailer still called despite failed verification
+    const mailerCalled = fetchSpy.mock.calls.some(([input]) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      return url === NOTIFYGW_URL;
+    });
+    expect(mailerCalled).toBe(true);
+  });
+
+  it('turnstile: fails open when the siteverify call throws', async () => {
+    const fetchSpy = mockFetch({ siteverify: new Error('network down') });
+    const res = await onRequest({ request: post({ ...validLead, turnstileToken: 'tok_x' }), env });
+    expect(res.status).toBe(200);
+    expect(siteverifyCalls(fetchSpy)).toHaveLength(1);
+  });
+
+  it('turnstile: skips verification when the secret key is unset', async () => {
+    const fetchSpy = mockFetch();
+    const { TURNSTILE_SECRET_KEY, ...envNoSecret } = env;
+    const res = await onRequest({ request: post({ ...validLead, turnstileToken: 'tok_x' }), env: envNoSecret });
+    expect(res.status).toBe(200);
+    expect(siteverifyCalls(fetchSpy)).toHaveLength(0);
+  });
+
+  it('turnstile: skips verification when no token is present', async () => {
+    const fetchSpy = mockFetch();
+    const res = await onRequest({ request: post(validLead), env });
+    expect(res.status).toBe(200);
+    expect(siteverifyCalls(fetchSpy)).toHaveLength(0);
   });
 });

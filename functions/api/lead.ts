@@ -12,6 +12,8 @@ interface Env {
   NOTIFYGW_API_KEY: string;
   NOTIFYGW_INSTANCE?: string;
   LEAD_TO_EMAIL: string;
+  // Optional: absent means Turnstile verification is skipped entirely (fail-open).
+  TURNSTILE_SECRET_KEY?: string;
 }
 
 interface LeadPayload {
@@ -21,10 +23,45 @@ interface LeadPayload {
   service?: string;
   details?: string;
   company?: string; // honeypot
+  turnstileToken?: string; // Cloudflare Turnstile token (optional; fail-open)
+  formLoadedAt?: number; // client mount time (ms since epoch) for the time-trap
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NOTIFYGW_URL = 'https://api.notifygw.com/api/v1/email';
+const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
+// Minimum plausible human fill time. A submission recorded as faster than this is a
+// script. Kept deliberately low: real submits (even with autofill) clear it, while
+// scripted ones (tens of ms) don't — minimizing false positives on the one layer that
+// can silently drop a real lead. See the design spec for the clock-skew reasoning.
+const MIN_FILL_MS = 800;
+
+// Verify a Turnstile token with Cloudflare. Advisory only: the result is logged but
+// never gates delivery (fail-open). Bounded by an explicit timeout so a hung siteverify
+// can't stall — and cost — a real lead.
+async function verifyTurnstile(token: string, secret: string, remoteip: string | null): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const params = new URLSearchParams({ secret, response: token });
+    if (remoteip) params.set('remoteip', remoteip);
+    const res = await fetch(SITEVERIFY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+      signal: controller.signal,
+    });
+    const result = (await res.json()) as { success?: boolean; 'error-codes'?: string[] };
+    if (!result.success) {
+      console.warn('[lead] turnstile verification failed (fail-open)', result['error-codes'] ?? result);
+    }
+  } catch (err) {
+    console.warn('[lead] turnstile verification error (fail-open)', err);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -54,7 +91,21 @@ export const onRequest: (context: {
 
   // Honeypot: silently accept-and-drop bots so they don't retry.
   if (clip(data.company, 200)) {
+    console.warn('[lead] honeypot drop');
     return json({ ok: true }, 202);
+  }
+
+  // Time-trap: drop submissions completed implausibly fast for a human. Only fires on a
+  // clean, small, positive elapsed time; anything else (missing, malformed, or a
+  // future/negative value from client clock skew) falls through — fail-open. Same
+  // response shape as the honeypot so a bot can't tell which check caught it.
+  const loadedAt = data.formLoadedAt;
+  if (typeof loadedAt === 'number' && Number.isFinite(loadedAt)) {
+    const elapsed = Date.now() - loadedAt;
+    if (elapsed >= 0 && elapsed < MIN_FILL_MS) {
+      console.warn(`[lead] time-trap drop: elapsed=${elapsed}ms`);
+      return json({ ok: true }, 202);
+    }
   }
 
   const name = clip(data.name, 120);
@@ -70,6 +121,13 @@ export const onRequest: (context: {
   if (!service) errors.service = 'A service selection is required.';
   if (Object.keys(errors).length > 0) {
     return json({ ok: false, errors }, 422);
+  }
+
+  // Turnstile: advisory verification, only when both a token and a secret are present.
+  // Never rejects the lead (fail-open) — it runs purely for its signal and logging.
+  const turnstileToken = clip(data.turnstileToken, 2048);
+  if (turnstileToken && env.TURNSTILE_SECRET_KEY) {
+    await verifyTurnstile(turnstileToken, env.TURNSTILE_SECRET_KEY, request.headers.get('CF-Connecting-IP'));
   }
 
   // LEAD_TO_EMAIL may list multiple recipients, comma- or semicolon-separated.
