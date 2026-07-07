@@ -233,6 +233,19 @@ textarea:focus-visible {
     from { transform: rotate(-25deg) scale(0.6); }
     to { transform: rotate(0) scale(1); }
   }
+
+  /* Ambient background: the hexagon motif drifts one full tile, seamlessly and
+     very slowly, behind the hero copy panel and the dark navy sections. Animates
+     background-position only (no layout/CLS); disabled under reduced-motion. */
+  .hex-field,
+  .hex-field-navy {
+    animation: hexDrift 60s linear infinite;
+  }
+  @keyframes hexDrift {
+    to {
+      background-position: 56px 96px;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
