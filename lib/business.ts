@@ -46,7 +46,7 @@ export const seoDefaults = {
   title: 'Top Flooring Orlando | Flooring Installation in Orlando, FL',
   description:
     "Orlando's flooring experts — hardwood, tile, luxury vinyl, stone & epoxy. Free in-home estimates and shop-at-home samples. Call (689) 255-7378.",
-  ogImage: '/og-image.jpg',
+  ogImage: '/og-logo.jpg',
   logo: '/web-app-manifest-512x512.png',
 } as const;
 
