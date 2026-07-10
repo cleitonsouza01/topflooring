@@ -50,8 +50,8 @@ export function Hero() {
         <div className="relative order-1 lg:order-2 min-h-[280px] sm:min-h-[380px] lg:min-h-full">
           <div className="absolute inset-0 overflow-hidden">
             <Image
-              src="/images/hero-marble.webp"
-              alt="Open-plan Orlando great room with glossy marble-look tile floor and staircase"
+              src="/images/feature-star-marble.webp"
+              alt="White and walnut marble star and hexagon feature wall with recessed niche"
               fill
               priority
               sizes="(min-width: 1024px) 50vw, 100vw"
